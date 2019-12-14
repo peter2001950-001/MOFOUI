@@ -4,17 +4,26 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.Manifest;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 
+import android.support.annotation.NonNull;
+import android.content.DialogInterface;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -27,10 +36,29 @@ public class Start extends AppCompatActivity {
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
     private  String url = "https://mofoapp.azurewebsites.net";
+    private int STORAGE_PERMISSION_CODE = 1;
+    private  boolean authKeyCheckRepeat = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
+
+        String authKey = GetAuthKey();
+        if (ContextCompat.checkSelfPermission(Start.this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(Start.this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+
+            if(authKey == null)
+            {
+                startActivity(new Intent(Start.this, Register.class));
+
+
+            }else {
+                new AuthKeyCheck().execute(authKey);
+                // startActivity(new Intent(Start.this, MainActivity.class));
+            }
+        } else {
+            requestStoragePermission();
+        }
 
         Button button = (Button) findViewById(R.id.button2);
 
@@ -47,39 +75,149 @@ public class Start extends AppCompatActivity {
         text.setVisibility(View.INVISIBLE);
         Button btn = findViewById(R.id.button2);
         btn.setVisibility(View.INVISIBLE);
-        String authKey = GetAuthKey();
         TextView  text1 = (TextView) findViewById(R.id.textView3);
-        text1.setVisibility(View.VISIBLE);
-        if(authKey == null)
-        {
-            startActivity(new Intent(Start.this, Register.class));
-
-
-        }else {
-            new AuthKeyCheck().execute(authKey);
-           // startActivity(new Intent(Start.this, MainActivity.class));
-        }
+        text1.setVisibility(View.INVISIBLE);
+        ProgressBar pb = findViewById(R.id.progressBar3);
+        pb.setVisibility(View.VISIBLE);
 
     }
+
+    private void requestStoragePermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)) {
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Изисква се разрешение!")
+                    .setMessage("За пълната функционалност на приложението се изсква достъп до вътрешната памет.")
+                    .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ActivityCompat.requestPermissions(Start.this,
+                                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+                        }
+                    })
+                    .setNegativeButton("Отказ", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            new AlertDialog.Builder(getApplicationContext())
+                                    .setTitle("Изисква се разрешение!")
+                                    .setMessage("Разрешението е отказано. Приложението ще бъде затворено.")
+                                    .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            finish();
+                                        }
+                                    })                        .create().show();
+                        }
+                    })
+                    .create().show();
+
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+        }
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == STORAGE_PERMISSION_CODE)  {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                String authKey = GetAuthKey();
+                if(authKey == null)
+                {
+                    startActivity(new Intent(Start.this, Register.class));
+
+
+                }else {
+                    new AuthKeyCheck().execute(authKey);
+            }
+            } else {
+                new AlertDialog.Builder(this)
+                        .setTitle("Изисква се разрешение!")
+                        .setMessage("Разрешението е отказано. Приложението ще бъде затворено.")
+                        .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                            }
+                        })                        .create().show();
+                Toast.makeText(this, "Permission DENIED", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-
+        String authKey = GetAuthKey();
+        if(authKeyCheckRepeat){
+            new AuthKeyCheck().execute(authKey);
+        }
         if (nfcAdapter != null) {
-            if (!nfcAdapter.isEnabled())
+            if (!nfcAdapter.isEnabled()) {
                 showWirelessSettings();
-
-            nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
+            }else {
+                nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
+            }
         }
     }
     @Override
     protected void onPause(){
         super.onPause();
-        nfcAdapter.disableForegroundDispatch(this);
+        if(nfcAdapter!=null){
+            nfcAdapter.disableForegroundDispatch(this);
+        }
     }
     private void showWirelessSettings() {
-        startActivity(new Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS));
-        Toast.makeText(this, "You need to enable NFC", Toast.LENGTH_SHORT).show();
+        new AlertDialog.Builder(this)
+                .setTitle("Изисква се разрешение!")
+                .setMessage("За пълната функционалност на приложението се изсква включено NFC.")
+                .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
+                    }
+                })
+                .setNegativeButton("Отказ", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        new AlertDialog.Builder(getApplicationContext())
+                                .setTitle("Изисква се разрешение!")
+                                .setMessage("Разрешението е отказано. Приложението ще бъде затворено.")
+                                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        finish();
+                                    }
+                                })                        .create().show();
+                    }
+                })
+                .create().show();new AlertDialog.Builder(this)
+                .setTitle("Изисква се разрешение!")
+                .setMessage("За пълната функционалност на приложението се изсква включено NFC.")
+                .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS));
+                    }
+                })
+                .setNegativeButton("Отказ", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        new AlertDialog.Builder(getApplicationContext())
+                                .setTitle("Изисква се разрешение!")
+                                .setMessage("Разрешението е отказано. Приложението ще бъде затворено.")
+                                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        finish();
+                                    }
+                                })                        .create().show();
+                    }
+                })
+                .create().show();
     }
     private  void createPendingIntent(){
         if (nfcAdapter != null) {
@@ -91,6 +229,10 @@ public class Start extends AppCompatActivity {
                         new Intent(getApplicationContext(), this.getClass())
                                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
                 nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
+                TextView  text1 = (TextView) findViewById(R.id.textView3);
+                text1.setVisibility(View.VISIBLE);
+                ProgressBar pb = findViewById(R.id.progressBar3);
+                pb.setVisibility(View.INVISIBLE);
 
             }
         }else{
@@ -100,6 +242,8 @@ public class Start extends AppCompatActivity {
             btn.setVisibility(View.VISIBLE);
             TextView  text1 = (TextView) findViewById(R.id.textView3);
             text1.setVisibility(View.INVISIBLE);
+            ProgressBar pb = findViewById(R.id.progressBar3);
+                    pb.setVisibility(View.INVISIBLE);
         }
 
     }
@@ -108,6 +252,7 @@ public class Start extends AppCompatActivity {
     }
     private NfcAdapter getAdapter(){
         return NfcAdapter.getDefaultAdapter(this);
+     //   return  null;
     }
 
     @Override
@@ -182,24 +327,38 @@ public class Start extends AppCompatActivity {
         }
         @Override
         protected void onPostExecute(models.BasicResponse basicResponse) {
-            showToast(basicResponse.status);
+            if (basicResponse != null) {
+                if (basicResponse.status.compareTo("OK") == 0) {
+                    startActivity(new Intent(Start.this, MainActivity.class));
+                } else if (basicResponse.status.compareTo("WRONG AUTH") == 0) {
+                    startActivity(new Intent(Start.this, Register.class));
+                } else {
+                    nfcAdapter = getAdapter();
+                    if(nfcAdapter!=null) {
+                        boolean check = nfcAdapter.isEnabled();
+                        if (nfcAdapter == null || !check) {
 
-          if(basicResponse.status.compareTo("OK")==0){
-              startActivity(new Intent(Start.this, MainActivity.class));
-          }else if(basicResponse.status.compareTo("WRONG AUTH")==0) {
-              startActivity(new Intent(Start.this, Register.class));
-          }else{
-             nfcAdapter = getAdapter();
-             boolean check = nfcAdapter.isEnabled();
-             if (nfcAdapter == null||!check) {
+                            showWirelessSettings();
 
-                finish();
-                showWirelessSettings();
-                return;
-         }else {
-                createPendingIntent();
+                        } else {
+                            createPendingIntent();
+                        }
+                    }else{
+                        TextView  text = (TextView) findViewById(R.id.editText2);
+                        text.setVisibility(View.VISIBLE);
+                        Button btn = findViewById(R.id.button2);
+                        btn.setVisibility(View.VISIBLE);
+                        TextView  text1 = (TextView) findViewById(R.id.textView3);
+                        text1.setVisibility(View.INVISIBLE);
+                        ProgressBar pb = findViewById(R.id.progressBar3);
+                        pb.setVisibility(View.INVISIBLE);
+                    }
+                }
+                authKeyCheckRepeat = false;
+            }else{
+                authKeyCheckRepeat = true;
+                noInternet();
             }
-          }
         }
 
     }
@@ -226,20 +385,35 @@ public class Start extends AppCompatActivity {
         }
         @Override
         protected void onPostExecute(models.BasicResponse basicResponse) {
+            if (basicResponse != null) {
+                if (basicResponse.status.compareTo("OK") == 0) {
+                    Intent intent = new Intent(Start.this, MainActivity.class);// New activity
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                    finish();
 
-            if(basicResponse.status.compareTo("OK")==0){
-                Intent intent = new Intent(Start.this, MainActivity.class);// New activity
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                finish();
-
-            }else if(basicResponse.status.compareTo("NO DESK")==0) {
-                showToast("Unauthorised card");
-            }else{
-                startActivity(new Intent(Start.this, Register.class));
+                } else if (basicResponse.status.compareTo("NO DESK") == 0) {
+                    showToast("Unauthorised card");
+                } else {
+                    startActivity(new Intent(Start.this, Register.class));
+                }
+            }else {
+                noInternet();
             }
         }
 
+    }
+    private void noInternet(){
+        new AlertDialog.Builder(this)
+                .setTitle("Няма връзка с интернет!")
+                .setMessage("За пълната функционалност на приложението се изисква интернет връзка.")
+                .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .create().show();
     }
 }
 

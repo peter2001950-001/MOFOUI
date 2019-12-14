@@ -1,9 +1,12 @@
 package com.example.mofoui;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.provider.Settings;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -69,10 +72,25 @@ public class Register extends AppCompatActivity {
         @Override
         protected void onPostExecute(models.RegisterUser result) {
 
+            if(result==null){
+                noInternet();
+            }
            // TextView tv = findViewById(R.id.textbar);
             //    tv.setText(result.JsonString);
 
         }
 
+    }
+    private void noInternet(){
+        new AlertDialog.Builder(this)
+                .setTitle("Няма връзка с интернет!")
+                .setMessage("За пълната функционалност на приложението се изисква интернет връзка.")
+                .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .create().show();
     }
 }

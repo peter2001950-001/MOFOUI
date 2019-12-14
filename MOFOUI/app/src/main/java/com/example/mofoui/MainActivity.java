@@ -1,6 +1,7 @@
 package com.example.mofoui;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -8,9 +9,11 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatTextView;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -52,7 +55,7 @@ public class MainActivity extends AppCompatActivity
     private ListView frontFeedListView;
     private  String url = "https://mofoapp.azurewebsites.net";
     private File[] files;
-    Timer timer = new Timer();
+    private  static Timer timer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,7 +80,12 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        Timer timer = new Timer();
+
+    }
+    @Override
+    public  void onStart(){
+        super.onStart();
+        timer = new Timer();
         TimerTask task = new FeedTimerTask(GetAuthKey());
         timer.schedule(task, 0, 10000);
         frontFeedListView = findViewById(R.id.frontFeedListView);
@@ -90,7 +98,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
-
     @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -142,10 +149,6 @@ public class MainActivity extends AppCompatActivity
             startActivity(intent);
         }else if(id== R.id.leaveRoom){
             new LeaveRoom().execute(GetAuthKey());
-            Intent intent = new Intent(this, Start.class);
-            timer.cancel();
-            timer = null;
-            finish();
 
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -178,36 +181,42 @@ public class MainActivity extends AppCompatActivity
         }
         @Override
         protected void onPostExecute(models.FeedSync basicResponse) {
+            if (basicResponse != null) {
+                if (basicResponse.status.compareTo("OK") == 0) {
 
-            if(basicResponse.status.compareTo("OK")==0){
+                    frontFeedListView = findViewById(R.id.frontFeedListView);
+                    String[] feed = new String[basicResponse.files.size()];
+                    files = new File[basicResponse.files.size()];
+                    if (basicResponse.files.size() != 0) {
+                        TextView t1 = findViewById(R.id.textView7);
+                        t1.setVisibility(View.INVISIBLE);
+                    } else {
+                        TextView t1 = findViewById(R.id.textView7);
+                        t1.setVisibility(View.VISIBLE);
+                    }
+                    int counter = 0;
+                    for (int i = basicResponse.files.size() - 1; i >= 0; i--) {
+                        feed[counter] = "\n" + basicResponse.files.get(i).username + " качи: " + "\nОписание: " + basicResponse.files.get(i).message + "\nФайл: " + basicResponse.files.get(i).fileName + "\n" + basicResponse.files.get(i).dateTimeUploaded + "\n";
+                        files[counter] = basicResponse.files.get(i);
+                        counter++;
+                    }
 
-                frontFeedListView = findViewById(R.id.frontFeedListView);
-                String[] feed = new String[basicResponse.files.size()];
-                files = new File[basicResponse.files.size()];
-                if(basicResponse.files.size()!=0){
-                    TextView t1 = findViewById(R.id.textView7);
-                    t1.setVisibility(View.INVISIBLE);
-                }else {
-                    TextView t1 = findViewById(R.id.textView7);
-                    t1.setVisibility(View.VISIBLE);
+                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, feed);
+                    frontFeedListView.setAdapter(arrayAdapter);
+
+                } else if (basicResponse.status.compareTo("WRONG AUTH") == 0) {
+                    startActivity(new Intent(MainActivity.this, Register.class));
+                    timer.cancel();
+                    timer = null;
+                    finish();
+                } else if (basicResponse.status.compareTo("NO SESSION") == 0) {
+                    startActivity(new Intent(MainActivity.this, Start.class));
+                    timer.cancel();
+                    timer = null;
+                    finish();
                 }
-                for (int i=0; i<basicResponse.files.size(); i++){
-                    feed[i] = "\n" + basicResponse.files.get(i).username+ " качи: "+  "\nОписание: "+ basicResponse.files.get(i).message + "\nФайл: " + basicResponse.files.get(i).fileName + "\n"+ basicResponse.files.get(i).dateTimeUploaded +  "\n";
-                    files[i] = basicResponse.files.get(i);
-                }
-
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, feed);
-                frontFeedListView.setAdapter(arrayAdapter);
-
-            }else if(basicResponse.status.compareTo("WRONG AUTH")==0) {
-                startActivity(new Intent(MainActivity.this, Register.class));
-                timer.cancel();
-                finish();
-            }else if(basicResponse.status.compareTo("NO SESSION")==0){
-                startActivity(new Intent(MainActivity.this, Start.class));
-                timer.cancel();
-                timer = null;
-                finish();
+            }else {
+                noInternet();
             }
         }
 
@@ -335,7 +344,10 @@ public class MainActivity extends AppCompatActivity
                 registerUser =gson.fromJson(requestResponse.JsonString, models.RegisterUser.class);
 
                 startActivity(new Intent(MainActivity.this, Start.class));
+                timer.cancel();
+                timer = null;
                 finish();
+
 
             }
             catch (IOException e) {
@@ -371,5 +383,17 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("Start", Context.MODE_PRIVATE);
         String key = sharedPref.getString("authKey", null);
         return  key;
+    }
+    private void noInternet(){
+        new AlertDialog.Builder(this)
+                .setTitle("Няма връзка с интернет!")
+                .setMessage("За пълната функционалност на приложението се изисква интернет връзка.")
+                .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startActivity(new Intent(Settings.ACTION_SETTINGS));
+                    }
+                })
+                .create().show();
     }
 }
