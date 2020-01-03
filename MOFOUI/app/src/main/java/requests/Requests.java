@@ -11,12 +11,16 @@ public class Requests {
             public  String JsonString;
             public  int HttpResponseCode;
     }
-    public static RequestResponse HttpRequest(String url, String requestType) throws IOException {
+    public static RequestResponse HttpRequest(String url, String requestType, String cookies) throws IOException {
         URL urlAddress = new URL(url);
         HttpURLConnection con = (HttpURLConnection) urlAddress.openConnection();
         con.setRequestMethod(requestType);
 
         con.setRequestProperty("Content-Type", "application/json");
+        if(cookies!=null)
+        {
+            con.setRequestProperty("Cookie", cookies);
+        }
         String contentType = con.getHeaderField("Content-Type");
         con.setConnectTimeout(5000);
         con.setReadTimeout(5000);

@@ -18,6 +18,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import models.ActiveUsers;
+import models.Constants;
 import models.FeedSync;
 import models.File;
 import models.User;
@@ -25,7 +26,7 @@ import requests.Requests;
 
 public class Users extends AppCompatActivity {
 
-    private  String url = "https://mofoapp.azurewebsites.net";
+    private  String url = Constants.URl;
     private ListView frontFeedListView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +59,7 @@ public class Users extends AppCompatActivity {
             models.ActiveUsers basicResponse = null;
             try {
 
-                requestResponse = Requests.HttpRequest(url+ "/room/getactiveusers?auth=" + urls[0], "GET");
+                requestResponse = Requests.HttpRequest(url+ "/room/getactiveusers?auth=" + urls[0], "GET", null);
                 Gson gson = new GsonBuilder().create();
                 basicResponse =gson.fromJson(requestResponse.JsonString, models.ActiveUsers.class);
 

@@ -45,6 +45,7 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import models.BasicResponse;
+import models.Constants;
 import models.FeedSync;
 import models.File;
 import requests.Requests;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private ListView frontFeedListView;
-    private  String url = "https://mofoapp.azurewebsites.net";
+    private  String url = Constants.URl;
     private File[] files;
     private  static Timer timer;
     @Override
@@ -165,7 +166,7 @@ public class MainActivity extends AppCompatActivity
             models.FeedSync basicResponse = null;
             try {
 
-                requestResponse = Requests.HttpRequest(url+ "/file/filesync?auth=" + urls[0], "GET");
+                requestResponse = Requests.HttpRequest(url+ "/file/filesync?auth=" + urls[0], "GET", null);
                 Gson gson = new GsonBuilder().create();
                 basicResponse =gson.fromJson(requestResponse.JsonString, models.FeedSync.class);
 
@@ -339,7 +340,7 @@ public class MainActivity extends AppCompatActivity
             models.RegisterUser registerUser = null;
             try {
 
-                requestResponse = Requests.HttpRequest(url + "/room/logout?auth="+ urls[0], "POST");
+                requestResponse = Requests.HttpRequest(url + "/room/logout?auth="+ urls[0], "POST", null);
                 Gson gson = new GsonBuilder().create();
                 registerUser =gson.fromJson(requestResponse.JsonString, models.RegisterUser.class);
 

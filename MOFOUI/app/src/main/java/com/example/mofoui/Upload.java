@@ -29,6 +29,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
+import models.Constants;
+
 public class Upload extends AppCompatActivity {
 
 
@@ -151,7 +153,7 @@ public class Upload extends AppCompatActivity {
                 if (sourceFile.isFile()) {
 
                     try {
-                        String upLoadServerUri = "https://mofoapp.azurewebsites.net/file/uploadFile?type=1&message="+ params[0]+ "&auth="+ params[1];
+                        String upLoadServerUri = Constants.URl+ "/file/uploadFile?type=1&message="+ params[0]+ "&auth="+ params[1];
 
                         // open a URL connection to the Servlet
                         FileInputStream fileInputStream = new FileInputStream(

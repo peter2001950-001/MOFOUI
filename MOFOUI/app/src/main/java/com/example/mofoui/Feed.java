@@ -16,11 +16,12 @@ import com.google.gson.GsonBuilder;
 import java.io.IOException;
 
 import models.BasicResponse;
+import models.Constants;
 import requests.Requests;
 
 public class Feed extends AppCompatActivity {
     private ListView feedListView;
-    private  String url = "http://192.168.88.130:59192";
+    private  String url = Constants.URl;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -29,13 +29,14 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
+import models.Constants;
 import requests.Requests;
 
 public class Start extends AppCompatActivity {
 
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
-    private  String url = "https://mofoapp.azurewebsites.net";
+    private  String url = Constants.URl;
     private int STORAGE_PERMISSION_CODE = 1;
     private  boolean authKeyCheckRepeat = false;
     @Override
@@ -310,7 +311,7 @@ public class Start extends AppCompatActivity {
             models.BasicResponse basicResponse = null;
             try {
 
-                requestResponse = Requests.HttpRequest(url+ "/room/authkeycheck?auth=" + urls[0], "GET");
+                requestResponse = Requests.HttpRequest(url+ "/room/authkeycheck?auth=" + urls[0], "GET", null);
                 Gson gson = new GsonBuilder().create();
                  basicResponse =gson.fromJson(requestResponse.JsonString, models.BasicResponse.class);
 
@@ -369,7 +370,7 @@ public class Start extends AppCompatActivity {
             models.BasicResponse basicResponse = null;
             try {
 
-                requestResponse = Requests.HttpRequest(url+ "/room/joinroom?auth=" + urls[0]+ "&deskCode="+urls[1], "POST");
+                requestResponse = Requests.HttpRequest(url+ "/room/joinroom?auth=" + urls[0]+ "&deskCode="+urls[1], "POST", null);
                 Gson gson = new GsonBuilder().create();
                 basicResponse =gson.fromJson(requestResponse.JsonString, models.BasicResponse.class);
 
