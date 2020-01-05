@@ -161,6 +161,9 @@ public class QRScanner extends AppCompatActivity {
 
                 } else if (basicResponse.status.compareTo("NO DESK") == 0) {
                     Toast.makeText(QRScanner.this,"Unauthorised card", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(QRScanner.this, Start.class);
+                    startActivity(intent);
+                    finish();
                 } else {
                     startActivity(new Intent(QRScanner.this, Register.class));
                 }
