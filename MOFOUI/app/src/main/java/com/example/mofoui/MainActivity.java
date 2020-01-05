@@ -10,18 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.FileProvider;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.AppCompatTextView;
 import android.view.View;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.AdapterView;
@@ -40,10 +29,20 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import models.BasicResponse;
 import models.Constants;
 import models.FeedSync;
@@ -124,9 +123,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -137,24 +134,21 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_feed) {
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        } else if (id == R.id.nav_users) {
+        if (id == R.id.nav_users) {
             Intent intent = new Intent(this, Users.class);
             startActivity(intent);
 
         } else if (id == R.id.nav_account) {
             Intent intent = new Intent(this, Account.class);
             startActivity(intent);
+
         }else if(id== R.id.leaveRoom){
             new LeaveRoom().execute(GetAuthKey());
 
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
-        return true;
+        return false;
     }
     private  void  showToast(String message){
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
@@ -302,7 +296,7 @@ public class MainActivity extends AppCompatActivity
         @Override
         protected void onPostExecute(String path){
             java.io.File file = new java.io.File(path);
-            Uri uri =FileProvider.getUriForFile(MainActivity.this,
+            Uri uri = FileProvider.getUriForFile(MainActivity.this,
                     BuildConfig.APPLICATION_ID + ".provider",
                     file);
 

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -17,6 +16,7 @@ import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import androidx.appcompat.app.AppCompatActivity;
 import models.ActiveUsers;
 import models.Constants;
 import models.FeedSync;
@@ -84,7 +84,7 @@ public class Users extends AppCompatActivity {
                 for (int i=0; i<basicResponse.users.size(); i++){
                     feed[i] =  basicResponse.users.get(i).userName;
                 }
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, feed);
+                ArrayAdapter arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, feed);
                 frontFeedListView.setAdapter(arrayAdapter);
 
             }else if(basicResponse.status.compareTo("WRONG AUTH")==0) {

@@ -11,24 +11,27 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.Settings;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
+import android.text.SpannableString;
+import android.text.style.UnderlineSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 
-import android.support.annotation.NonNull;
 import android.content.DialogInterface;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import models.Constants;
 import requests.Requests;
 
@@ -43,10 +46,11 @@ public class Start extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
-
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.hide();
         String authKey = GetAuthKey();
         if (ContextCompat.checkSelfPermission(Start.this,
-                Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(Start.this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(Start.this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(Start.this, Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) {
 
             if(authKey == null)
             {
@@ -62,7 +66,17 @@ public class Start extends AppCompatActivity {
         }
 
         Button button = (Button) findViewById(R.id.button2);
-
+        TextView qrLink = (TextView) findViewById(R.id.openQR);
+        String qrText = "Натиснете за да сканирате QR кода";
+        SpannableString content = new SpannableString(qrText);
+        content.setSpan(new UnderlineSpan(), 0, qrText.length(), 0);
+        qrLink.setText(content);
+        qrLink.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(Start.this, QRScanner.class));
+            }
+        });
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -81,20 +95,21 @@ public class Start extends AppCompatActivity {
         ProgressBar pb = findViewById(R.id.progressBar3);
         pb.setVisibility(View.VISIBLE);
 
+
     }
 
     private void requestStoragePermission() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                Manifest.permission.READ_EXTERNAL_STORAGE)&& ActivityCompat.shouldShowRequestPermissionRationale(this,Manifest.permission.CAMERA)) {
 
             new AlertDialog.Builder(this)
                     .setTitle("Изисква се разрешение!")
-                    .setMessage("За пълната функционалност на приложението се изсква достъп до вътрешната памет.")
+                    .setMessage("За пълната функционалност на приложението се изсква достъп до вътрешната памет и камерата.")
                     .setPositiveButton("Ок", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             ActivityCompat.requestPermissions(Start.this,
-                                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+                                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, STORAGE_PERMISSION_CODE);
                         }
                     })
                     .setNegativeButton("Отказ", new DialogInterface.OnClickListener() {
@@ -116,7 +131,7 @@ public class Start extends AppCompatActivity {
 
         } else {
             ActivityCompat.requestPermissions(this,
-                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+                    new String[] {Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, STORAGE_PERMISSION_CODE);
         }
     }
     @Override

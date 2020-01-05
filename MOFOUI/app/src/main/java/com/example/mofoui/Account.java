@@ -2,8 +2,6 @@
 package com.example.mofoui;
 
 import android.content.Context;
-import android.support.design.widget.NavigationView;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -15,6 +13,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.FileOutputStream;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class Account extends AppCompatActivity {
 

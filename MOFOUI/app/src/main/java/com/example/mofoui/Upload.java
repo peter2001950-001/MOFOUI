@@ -1,34 +1,43 @@
 package com.example.mofoui;
 
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Environment;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.nbsp.materialfilepicker.MaterialFilePicker;
-import com.nbsp.materialfilepicker.ui.FilePickerActivity;
-
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 
+import androidx.appcompat.app.AppCompatActivity;
 import models.Constants;
 
 public class Upload extends AppCompatActivity {
@@ -42,7 +51,6 @@ public class Upload extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-
         Button btn = (Button) findViewById(R.id.upload);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,18 +60,11 @@ public class Upload extends AppCompatActivity {
                 new UploadFileAsync().execute(tx.getText().toString(), key);
             }
         });
-        FloatingActionButton chooseFile = (FloatingActionButton) findViewById(R.id.choose);
-        chooseFile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new MaterialFilePicker()
-                        .withActivity(Upload.this)
-                        .withRequestCode(1).withRootPath(Environment.getExternalStorageDirectory().getPath())
-                        .withFilterDirectories(false) // Set directories filterable (false by default)
-                        .withHiddenFiles(true) // Show hidden files and folders
-                        .start();
-            }
-        });
+        Intent intent = new Intent();
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath());
+        intent.setDataAndType(uri,"*/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select file"),1);
         TextView t3 = findViewById(R.id.editText3);
         t3.setVisibility((View.INVISIBLE));
         Button b1 = findViewById(R.id.upload);
@@ -101,15 +102,11 @@ public class Upload extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 1 && resultCode == RESULT_OK) {
-            String path = data.getStringExtra(FilePickerActivity.RESULT_FILE_PATH);
-
+            Uri fileUri = data.getData();
+            String path = getRealPathFromUri(getApplicationContext(),fileUri);
             if (path != null) {
                 UploadFileFileName = path;
                 String filename=path.substring(path.lastIndexOf("/")+1);
-                FloatingActionButton f1 = findViewById(R.id.choose);
-                f1.hide();
-                TextView t1 = findViewById(R.id.textView2);
-                t1.setVisibility((View.INVISIBLE));
 
                 TextView t3 = findViewById(R.id.editText3);
                 t3.setVisibility((View.VISIBLE));
@@ -125,10 +122,156 @@ public class Upload extends AppCompatActivity {
                 t5.setText(filename);
                 TextView t6 = findViewById(R.id.textView6);
                 t6.setVisibility((View.VISIBLE));
-                //TextView textView = (TextView) findViewById(R.id.fileName);
-               // textView.setText(UploadFileFileName);
+            }
+            else{
+                Toast.makeText(getApplicationContext(), "Can't upload a virtual file", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }else if (resultCode == RESULT_CANCELED){
+            finish();
+        }
+    }
+    public String getRealPathFromUri(Context context, Uri uri){
+        final boolean needToCheckUri = Build.VERSION.SDK_INT >= 19;
+        String selection = null;
+        String[] selectionArgs = null;
+        // Uri is different in versions after KITKAT (Android 4.4), we need to
+        // deal with different Uris.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (needToCheckUri && DocumentsContract.isDocumentUri(context.getApplicationContext(), uri)) {
+                if (isExternalStorageDocument(uri)) {
+                    final String docId = DocumentsContract.getDocumentId(uri);
+                    final String[] split = docId.split(":");
+                    return Environment.getExternalStorageDirectory() + "/" + split[1];
+                } else if (isDownloadsDocument(uri)) {
+                    final String id = DocumentsContract.getDocumentId(uri);
+                    uri = ContentUris.withAppendedId(
+                            Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                } else if (isMediaDocument(uri)) {
+                    final String docId = DocumentsContract.getDocumentId(uri);
+                    final String[] split = docId.split(":");
+                    final String type = split[0];
+                    if ("image".equals(type)) {
+                        uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                    } else if ("video".equals(type)) {
+                        uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                    } else if ("audio".equals(type)) {
+                        uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                    }
+                    selection = "_id=?";
+                    selectionArgs = new String[]{ split[1] };
+                }else if (isGoogleDriveUri(uri)) {
+                    uri = Uri.parse(getDriveFilePath(uri, context.getApplicationContext()));
+                    return uri.getPath();
+                }
             }
         }
+        if ("content".equalsIgnoreCase(uri.getScheme())) {
+            String[] projection = { MediaStore.Images.Media.DATA };
+            Cursor cursor = null;
+            try {
+                cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs, null);
+                if(cursor!=null) {
+                    int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                    if (cursor.moveToFirst()) {
+                        return cursor.getString(column_index);
+                    }
+                }
+            } catch (Exception e) {
+                return e.toString();
+            }
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+        return null;
+    }
+
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is ExternalStorageProvider.
+     */
+    public static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri.getAuthority());
+    }
+
+    private static boolean isGoogleDriveUri(Uri uri) {
+        return "com.google.android.apps.docs.storage".equals(uri.getAuthority()) || "com.google.android.apps.docs.storage.legacy".equals(uri.getAuthority());
+    }
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is DownloadsProvider.
+     */
+    public static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is MediaProvider.
+     */
+    public static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+    private boolean isVirtualFile(Uri uri) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (!DocumentsContract.isDocumentUri(getApplicationContext(), uri)) {
+                return false;
+            }
+
+            Cursor cursor = getApplicationContext().getContentResolver().query(
+                    uri,
+                    new String[]{DocumentsContract.Document.COLUMN_FLAGS},
+                    null, null, null);
+            int flags = 0;
+            if (cursor.moveToFirst()) {
+                flags = cursor.getInt(0);
+            }
+            cursor.close();
+            return (flags & DocumentsContract.Document.FLAG_VIRTUAL_DOCUMENT) != 0;
+        } else {
+            return false;
+        }
+    }
+    private String getDriveFilePath(Uri uri, Context context) {
+        Uri returnUri = uri;
+        Cursor returnCursor = context.getContentResolver().query(returnUri, null, null, null, null);
+        /*
+         * Get the column indexes of the data in the Cursor,
+         *     * move to the first row in the Cursor, get the data,
+         *     * and display it.
+         * */
+        int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+        int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+        returnCursor.moveToFirst();
+        String name = (returnCursor.getString(nameIndex));
+        File file = null;
+        String size = (Long.toString(returnCursor.getLong(sizeIndex)));
+        if(isVirtualFile(returnUri)){
+            return null;
+        }else {
+            file = new File(context.getCacheDir(), name);
+            try {
+                InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                FileOutputStream outputStream = new FileOutputStream(file);
+                int read = 0;
+                int maxBufferSize = 1 * 1024 * 1024;
+                int bytesAvailable = inputStream.available();
+
+                //int bufferSize = 1024;
+                int bufferSize = Math.min(bytesAvailable, maxBufferSize);
+
+                final byte[] buffers = new byte[bufferSize];
+                while ((read = inputStream.read(buffers)) != -1) {
+                    outputStream.write(buffers, 0, read);
+                }
+                inputStream.close();
+                outputStream.close();
+            } catch (Exception e) {
+                return e.toString();
+            }
+        }
+        return file.getPath();
     }
     private class UploadFileAsync extends AsyncTask<String, Integer, String> {
 
@@ -136,7 +279,6 @@ public class Upload extends AppCompatActivity {
         protected String doInBackground(String... params) {
 
             try {
-                String path = Environment.getExternalStorageDirectory().getPath();
 
                 String sourceFileUri =  UploadFileFileName;
 
@@ -148,8 +290,8 @@ public class Upload extends AppCompatActivity {
                 int bytesRead, bytesAvailable, bufferSize;
                 byte[] buffer;
                 int maxBufferSize = 1 * 1024 * 1024;
-                File sourceFile = new File(sourceFileUri);
 
+                File sourceFile = new File(sourceFileUri);
                 if (sourceFile.isFile()) {
 
                     try {
@@ -214,27 +356,23 @@ public class Upload extends AppCompatActivity {
                         String serverResponseMessage = conn
                                 .getResponseMessage();
 
-                        if (serverResponseCode == 200) {
 
-                            // messageText.setText(msg);
-                            //Toast.makeText(ctx, "File Upload Complete.",
-                            //      Toast.LENGTH_SHORT).show();
-
-                            // recursiveDelete(mDirectory1);
-                        }
 
                         // close the streams //
                         fileInputStream.close();
                         dos.flush();
                         dos.close();
+                        if (serverResponseCode == 500) {
+                            return "Server error";
+                        }
                     } catch (Exception e) {
 
                         // dialog.dismiss();
                         e.printStackTrace();
-                        return "Executed";
+                        return "Server error";
                     }
                     // dialog.dismiss();
-                    return "Executed";
+                    return "File uploaded";
 
                 } // End else block
 
@@ -245,12 +383,12 @@ public class Upload extends AppCompatActivity {
                 ex.printStackTrace();
 
             }
-            return "Executed";
+            return "Not a file";
         }
 
         @Override
         protected void onPostExecute(String result) {
-            createToast("File uploaded");
+            createToast(result);
             startActivity(new Intent(Upload.this, MainActivity.class));
             finish();
         }

@@ -7,8 +7,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.Settings;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -25,6 +23,9 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import models.Constants;
 import requests.Requests;
 
@@ -38,7 +39,8 @@ public class Register extends AppCompatActivity {
         final WebView webView = (WebView) findViewById(R.id.webview);
         CookieSyncManager.createInstance(this);
         CookieSyncManager.getInstance().startSync();
-
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.hide();
         WebSettings webSettings = webView.getSettings();
         ((WebSettings) webSettings).setJavaScriptEnabled(true);
         /* WebViewClient must be set BEFORE calling loadUrl! */

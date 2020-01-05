@@ -4,7 +4,6 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -15,6 +14,7 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
+import androidx.appcompat.app.AppCompatActivity;
 import models.BasicResponse;
 import models.Constants;
 import requests.Requests;
