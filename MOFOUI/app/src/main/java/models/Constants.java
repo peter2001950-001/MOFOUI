@@ -1,5 +1,8 @@
 package models;
 
 public  final class Constants {
-    public final static  String URl = "http://192.168.0.103:59192";
+    /***
+     * WEB LINK SHOULD NOT END WITH "/"
+     */
+    public final static  String URl = "http://192.168.8.102:59192";
 }

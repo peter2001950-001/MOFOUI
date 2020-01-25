@@ -16,6 +16,7 @@ import android.provider.OpenableColumns;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -28,8 +29,15 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 import models.Constants;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class Upload extends AppCompatActivity {
 
@@ -264,7 +272,7 @@ public class Upload extends AppCompatActivity {
         }
         return file.getPath();
     }
-    private class UploadFileAsync extends AsyncTask<String, Integer, String> {
+   /* private class UploadFileAsync extends AsyncTask<String, Integer, String> {
 
         @Override
         protected String doInBackground(String... params) {
@@ -280,7 +288,7 @@ public class Upload extends AppCompatActivity {
                 String boundary = "*****";
                 int bytesRead, bytesAvailable, bufferSize;
                 byte[] buffer;
-                int maxBufferSize = 1 * 1024 * 1024;
+                int maxBufferSize = 10 * 1024 * 1024;
 
                 File sourceFile = new File(sourceFileUri);
                 if (sourceFile.isFile()) {
@@ -396,6 +404,114 @@ public class Upload extends AppCompatActivity {
             ProgressBar rb = (ProgressBar) findViewById(R.id.progressBar);
             rb.setProgress(values[0]);
         }
+
+
+    }
+    */
+    private class UploadFileAsync extends AsyncTask<String, Integer, String> {
+
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            try {
+
+                String sourceFileUri =  UploadFileFileName;
+
+                HttpURLConnection conn = null;
+                DataOutputStream dos = null;
+                String lineEnd = "\r\n";
+                String twoHyphens = "--";
+                String boundary = "*****";
+                int bytesRead, bytesAvailable, bufferSize;
+                byte[] buffer;
+                int maxBufferSize = 10 * 1024 * 1024;
+
+                File sourceFile = new File(sourceFileUri);
+                if (sourceFile.isFile()) {
+
+                    try {
+                        String upLoadServerUri = Constants.URl+ "/file/uploadFile?type=1&message="+ params[0]+ "&auth="+ params[1];
+
+                        // open a URL connection to the Servlet
+                        FileInputStream fileInputStream = new FileInputStream(
+                                sourceFile);
+
+
+                        URL url = new URL(upLoadServerUri);
+
+
+                        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+                        builder.connectTimeout(30, TimeUnit.SECONDS);
+                        builder.readTimeout(30, TimeUnit.SECONDS);
+
+                        File file = sourceFile;
+
+                        RequestBody requestBody = new MultipartBody.Builder()
+                                .setType(MultipartBody.FORM)
+                                .addFormDataPart("file", file.getName(),
+                                        RequestBody.create(file, MediaType.parse(getMimeType(file.getAbsolutePath()))))
+                                .build();
+
+                        Request requestBuilder = new Request.Builder()
+                                .url(url)
+                                .post(requestBody)
+                                .build();
+
+                        OkHttpClient client = builder.build();
+
+                        Response response = client.newCall(requestBuilder).execute();
+                        if (response.code() == 500) {
+                            return "Server error";
+                        }
+                    } catch (Exception e) {
+
+                        // dialog.dismiss();
+                        e.printStackTrace();
+                        return "Server error";
+                    }
+                    // dialog.dismiss();
+                    return "File uploaded";
+
+                } // End else block
+
+
+            } catch (Exception ex) {
+                // dialog.dismiss();
+
+                ex.printStackTrace();
+
+            }
+            return "Not a file";
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            createToast(result);
+            startActivity(new Intent(Upload.this, MainActivity.class));
+            finish();
+        }
+
+        @Override
+        protected void onPreExecute() {
+            Button bth = (Button) findViewById(R.id.upload);
+            bth.setVisibility(View.INVISIBLE);
+        }
+
+        @Override
+
+        protected void onProgressUpdate(Integer... values) {
+            ProgressBar rb = (ProgressBar) findViewById(R.id.progressBar);
+            rb.setProgress(values[0]);
+        }
+       public String getMimeType(String url) {
+           String type = null;
+           String extension = MimeTypeMap.getFileExtensionFromUrl(url);
+           if (extension != null) {
+               type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+           }
+           return type;
+       }
 
 
     }

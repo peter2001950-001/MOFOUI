@@ -2,6 +2,8 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 28
+
+    useLibrary 'org.apache.http.legacy'
     defaultConfig {
         applicationId "com.example.mofoui"
         minSdkVersion 15
@@ -30,4 +32,5 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.nbsp:library:1.8'
     implementation 'com.google.android.gms:play-services-vision:19.0.0'
+    implementation "com.squareup.okhttp3:okhttp:4.3.1"
 }
