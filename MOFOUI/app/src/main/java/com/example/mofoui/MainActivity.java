@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,6 +26,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -43,6 +46,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.RecyclerView;
 import models.BasicResponse;
 import models.Constants;
 import models.FeedSync;
@@ -52,10 +56,10 @@ import requests.Requests;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    private ListView frontFeedListView;
-    private  String url = Constants.URl;
-    private File[] files;
-    private  static Timer timer;
+    private RecyclerView frontFeedListView;
+    private String url = Constants.URl;
+    private models.File[] modelFiles;
+    private static Timer timer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,8 +92,8 @@ public class MainActivity extends AppCompatActivity
         timer = new Timer();
         TimerTask task = new FeedTimerTask(GetAuthKey());
         timer.schedule(task, 0, 10000);
-        frontFeedListView = findViewById(R.id.frontFeedListView);
-        frontFeedListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        frontFeedListView = findViewById(R.id.feedListView);
+        /*frontFeedListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 File file = files[position];
@@ -97,6 +101,7 @@ public class MainActivity extends AppCompatActivity
 
             }
         });
+        */
     }
     @Override
     public void onBackPressed() {
@@ -179,9 +184,8 @@ public class MainActivity extends AppCompatActivity
             if (basicResponse != null) {
                 if (basicResponse.status.compareTo("OK") == 0) {
 
-                    frontFeedListView = findViewById(R.id.frontFeedListView);
-                    String[] feed = new String[basicResponse.files.size()];
-                    files = new File[basicResponse.files.size()];
+                    frontFeedListView = findViewById(R.id.feedListView);
+                    modelFiles = new models.File[basicResponse.files.size()];
                     if (basicResponse.files.size() != 0) {
                         TextView t1 = findViewById(R.id.textView7);
                         t1.setVisibility(View.INVISIBLE);
@@ -190,13 +194,16 @@ public class MainActivity extends AppCompatActivity
                         t1.setVisibility(View.VISIBLE);
                     }
                     int counter = 0;
+
                     for (int i = basicResponse.files.size() - 1; i >= 0; i--) {
-                        feed[counter] = "\n" + basicResponse.files.get(i).username + " качи: " + "\nОписание: " + basicResponse.files.get(i).message + "\nФайл: " + basicResponse.files.get(i).fileName + "\n" + basicResponse.files.get(i).dateTimeUploaded + "\n";
-                        files[counter] = basicResponse.files.get(i);
+                        modelFiles[counter] = new File(basicResponse.files.get(i).getId(), basicResponse.files.get(i).getUsername(),basicResponse.files.get(i).getMessage(),basicResponse.files.get(i).getDownloadCode(),basicResponse.files.get(i).getFileName(),basicResponse.files.get(i).getDateTimeUploaded());
                         counter++;
                     }
-
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, feed);
+                    LayoutInflater inflater = LayoutInflater.from(getBaseContext());
+                    View view = inflater.inflate(R.layout.activity_feed, null);
+                    frontFeedListView = view.findViewById(R.id.feedListView);
+                    ArrayList<models.File> fileArrayList = new ArrayList<>(Arrays.asList(modelFiles));
+                    FeedAdapter arrayAdapter = new FeedAdapter(getApplicationContext(), fileArrayList);
                     frontFeedListView.setAdapter(arrayAdapter);
 
                 } else if (basicResponse.status.compareTo("WRONG AUTH") == 0) {

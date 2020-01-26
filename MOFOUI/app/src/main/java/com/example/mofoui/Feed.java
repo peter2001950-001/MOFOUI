@@ -13,29 +13,32 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import models.BasicResponse;
 import models.Constants;
 import requests.Requests;
 
 public class Feed extends AppCompatActivity {
-    private ListView feedListView;
-    private  String url = Constants.URl;
+    RecyclerView recyclerView;
+    ArrayList<models.File> modelFeedArrayList = new ArrayList<>();
+    FeedAdapter adapterFeed;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed);
+        recyclerView = (RecyclerView) findViewById(R.id.feedListView);
 
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
 
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        feedListView = findViewById(R.id.feedListView);
-        String[] feed = { "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4", "file 1", "file 2", "file 3", "file 4" };
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, feed);
-        feedListView.setAdapter(arrayAdapter);
+        adapterFeed = new FeedAdapter(this, modelFeedArrayList);
+        recyclerView.setAdapter(adapterFeed);
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
