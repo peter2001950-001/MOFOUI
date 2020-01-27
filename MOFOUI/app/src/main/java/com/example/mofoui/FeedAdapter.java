@@ -1,9 +1,11 @@
 package com.example.mofoui;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 
@@ -38,6 +40,17 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.MyViewHolder> 
         holder.username.setText(modelFeed.getUsername());
         holder.dateTimeUploaded.setText(modelFeed.getDateTimeUploaded());
         holder.fileName.setText(modelFeed.getFileName());
+        if(modelFeed.getMessage().compareTo("")==0){
+            holder.description.setVisibility(View.GONE);
+        }else {
+            holder.description.setVisibility(View.VISIBLE);
+        }
+        if(modelFeed.getFileName() == null || modelFeed.getFileName().compareTo("")==0){
+            holder.fileView.setVisibility(View.GONE);
+        }else {
+            holder.fileView.setVisibility(View.VISIBLE);
+        }
+        holder.description.setText(modelFeed.getMessage());
     }
 
     @Override
@@ -48,6 +61,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.MyViewHolder> 
     public class MyViewHolder extends RecyclerView.ViewHolder {
 
         TextView username, dateTimeUploaded, description, fileName;
+        LinearLayout fileView;
 
         public MyViewHolder(View itemView) {
             super(itemView);
@@ -56,6 +70,13 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.MyViewHolder> 
             dateTimeUploaded = (TextView) itemView.findViewById(R.id.dateTimeUploaded);
             description = (TextView) itemView.findViewById(R.id.description);
             fileName = (TextView) itemView.findViewById(R.id.fileName);
+            fileView = (LinearLayout) itemView.findViewById(R.id.file_view);
         }
     }
+    public String GetAuthKey(){
+        SharedPreferences sharedPref = context.getSharedPreferences("Start", Context.MODE_PRIVATE);
+        String key = sharedPref.getString("authKey", null);
+        return  key;
+    }
+
 }

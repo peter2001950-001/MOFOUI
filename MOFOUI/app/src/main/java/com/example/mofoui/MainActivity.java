@@ -46,6 +46,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import models.BasicResponse;
 import models.Constants;
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity
     private String url = Constants.URl;
     private models.File[] modelFiles;
     private static Timer timer;
+    private ArrayList<File> files;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,6 +87,14 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
 
+    }
+    public void CreateFeedAdapter(){
+            RecyclerView.LayoutManager manager = new LinearLayoutManager(getApplicationContext());
+
+            frontFeedListView =  findViewById(R.id.feedListView);
+            FeedAdapter arrayAdapter = new FeedAdapter(getApplicationContext(), files);
+            frontFeedListView.setLayoutManager(manager);
+            frontFeedListView.setAdapter(arrayAdapter);
     }
     @Override
     public  void onStart(){
@@ -199,12 +209,9 @@ public class MainActivity extends AppCompatActivity
                         modelFiles[counter] = new File(basicResponse.files.get(i).getId(), basicResponse.files.get(i).getUsername(),basicResponse.files.get(i).getMessage(),basicResponse.files.get(i).getDownloadCode(),basicResponse.files.get(i).getFileName(),basicResponse.files.get(i).getDateTimeUploaded());
                         counter++;
                     }
-                    LayoutInflater inflater = LayoutInflater.from(getBaseContext());
-                    View view = inflater.inflate(R.layout.activity_feed, null);
-                    frontFeedListView = view.findViewById(R.id.feedListView);
-                    ArrayList<models.File> fileArrayList = new ArrayList<>(Arrays.asList(modelFiles));
-                    FeedAdapter arrayAdapter = new FeedAdapter(getApplicationContext(), fileArrayList);
-                    frontFeedListView.setAdapter(arrayAdapter);
+
+                    files = new ArrayList<>(Arrays.asList(modelFiles));
+                    CreateFeedAdapter();
 
                 } else if (basicResponse.status.compareTo("WRONG AUTH") == 0) {
                     startActivity(new Intent(MainActivity.this, Register.class));
@@ -380,8 +387,9 @@ public class MainActivity extends AppCompatActivity
         {
           new FeedSyncRequest().execute(AuthKey);
         }
+
     }
-    private String GetAuthKey(){
+    public String GetAuthKey(){
         SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("Start", Context.MODE_PRIVATE);
         String key = sharedPref.getString("authKey", null);
         return  key;
