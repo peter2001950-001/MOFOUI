@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity
 
             frontFeedListView =  findViewById(R.id.feedListView);
             FeedAdapter arrayAdapter = new FeedAdapter(getApplicationContext(), files);
+            arrayAdapter.activity = MainActivity.this;
             frontFeedListView.setLayoutManager(manager);
             frontFeedListView.setAdapter(arrayAdapter);
     }
