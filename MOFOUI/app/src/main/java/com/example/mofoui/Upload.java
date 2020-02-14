@@ -462,16 +462,19 @@ public class Upload extends AppCompatActivity {
 
                         Response response = client.newCall(requestBuilder).execute();
                         if (response.code() == 500) {
-                            return "Server error";
+                            return "Сървърна грешка";
+                        }
+                        else if(response.message().compareTo("NO SESSION")==0){
+                            return "Сесията е прекратена";
                         }
                     } catch (Exception e) {
 
                         // dialog.dismiss();
                         e.printStackTrace();
-                        return "Server error";
+                        return "Сървърна грешка";
                     }
                     // dialog.dismiss();
-                    return "File uploaded";
+                    return "Файлът е качен";
 
                 } // End else block
 
@@ -482,7 +485,7 @@ public class Upload extends AppCompatActivity {
                 ex.printStackTrace();
 
             }
-            return "Not a file";
+            return "Ресурсът не може да бъде качен";
         }
 
         @Override

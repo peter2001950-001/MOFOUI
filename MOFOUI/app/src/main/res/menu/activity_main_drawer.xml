@@ -6,13 +6,13 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_users"
-            android:title="Active Users" />
+            android:title="Активни потребители" />
         <item
             android:id="@+id/nav_account"
-            android:title="Account" />
+            android:title="Акаунт" />
         <item
             android:id="@+id/leaveRoom"
-            android:title="Leave Room" />
+            android:title="Напусни сесията" />
     </group>
 
 

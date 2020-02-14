@@ -13,6 +13,8 @@ import android.os.Parcelable;
 import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.style.UnderlineSpan;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -21,21 +23,27 @@ import android.widget.Toast;
 import android.Manifest;
 
 import android.content.DialogInterface;
+
+import com.google.android.material.navigation.NavigationView;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import models.Constants;
 import requests.Requests;
 
-public class Start extends AppCompatActivity {
+public class Start extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener{
 
     private NfcAdapter nfcAdapter;
     private PendingIntent pendingIntent;
@@ -44,19 +52,29 @@ public class Start extends AppCompatActivity {
     private  boolean authKeyCheckRepeat = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.hide();
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
         String authKey = GetAuthKey();
         if (ContextCompat.checkSelfPermission(Start.this,
                 Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(Start.this,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(Start.this, Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED) {
 
-            if(authKey == null)
+            if(authKey == null || authKey=="")
             {
-                startActivity(new Intent(Start.this, Register.class));
-
-
+                SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+                String cookie = sharedPref.getString("cookies", null);
+                new GetAuthKey().execute(cookie);
             }else {
                 new AuthKeyCheck().execute(authKey);
                 // startActivity(new Intent(Start.this, MainActivity.class));
@@ -65,7 +83,6 @@ public class Start extends AppCompatActivity {
             requestStoragePermission();
         }
 
-        Button button = (Button) findViewById(R.id.button2);
         TextView qrLink = (TextView) findViewById(R.id.openQR);
         String qrText = "Натиснете за да сканирате QR кода";
         SpannableString content = new SpannableString(qrText);
@@ -77,26 +94,42 @@ public class Start extends AppCompatActivity {
                 startActivity(new Intent(Start.this, QRScanner.class));
             }
         });
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-              //  startActivity(new Intent(Start.this, MainActivity.class));
-                TextView tv = (TextView) findViewById( R.id.editText2);
-                new JoinRoom().execute(GetAuthKey(), tv.getText().toString());
-
-            }
-        });
-        TextView  text = (TextView) findViewById(R.id.editText2);
-        text.setVisibility(View.INVISIBLE);
-        Button btn = findViewById(R.id.button2);
-        btn.setVisibility(View.INVISIBLE);
         TextView  text1 = (TextView) findViewById(R.id.textView3);
         text1.setVisibility(View.INVISIBLE);
         ProgressBar pb = findViewById(R.id.progressBar3);
         pb.setVisibility(View.VISIBLE);
-
+        qrLink.setVisibility(View.INVISIBLE);
 
     }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        return false;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
 
     private void requestStoragePermission() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -139,7 +172,7 @@ public class Start extends AppCompatActivity {
         if (requestCode == STORAGE_PERMISSION_CODE)  {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 String authKey = GetAuthKey();
-                if(authKey == null)
+                if(authKey == null || authKey=="")
                 {
                     startActivity(new Intent(Start.this, Register.class));
 
@@ -245,6 +278,8 @@ public class Start extends AppCompatActivity {
                         new Intent(getApplicationContext(), this.getClass())
                                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
                 nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
+                TextView qrTextView = findViewById(R.id.openQR);
+                qrTextView.setVisibility(View.VISIBLE);
                 TextView  text1 = (TextView) findViewById(R.id.textView3);
                 text1.setVisibility(View.VISIBLE);
                 ProgressBar pb = findViewById(R.id.progressBar3);
@@ -252,10 +287,6 @@ public class Start extends AppCompatActivity {
 
             }
         }else{
-            TextView  text = (TextView) findViewById(R.id.editText2);
-            text.setVisibility(View.VISIBLE);
-            Button btn = findViewById(R.id.button2);
-            btn.setVisibility(View.VISIBLE);
             TextView  text1 = (TextView) findViewById(R.id.textView3);
             text1.setVisibility(View.INVISIBLE);
             ProgressBar pb = findViewById(R.id.progressBar3);
@@ -286,8 +317,6 @@ public class Start extends AppCompatActivity {
 
             byte[] tagId = tag.getId();
             String code = toHex(tagId);
-            TextView  text = (TextView) findViewById(R.id.editText2);
-            text.setText(code);
             new JoinRoom().execute(GetAuthKey(), code);
 
            // SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
@@ -319,6 +348,59 @@ public class Start extends AppCompatActivity {
         String key = sharedPref.getString("authKey", null);
         return  key;
     }
+    public class GetAuthKey extends AsyncTask<String, Integer, models.RegisterUser> {
+        @Override
+        protected models.RegisterUser doInBackground(String... urls) {
+            Requests.RequestResponse requestResponse = null;
+            models.RegisterUser registerUser = null;
+            try {
+
+                requestResponse = Requests.HttpRequest(Constants.URl + "/account/getauthkey", "GET", urls[0]);
+                Gson gson = new GsonBuilder().create();
+                registerUser = gson.fromJson(requestResponse.JsonString, models.RegisterUser.class);
+                if (registerUser.status.equals("OK")) {
+                    SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("Start", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString("cookies", urls[0]);
+                    editor.putString("authKey", registerUser.auth);
+                    editor.commit();
+                    new AuthKeyCheck().execute(registerUser.auth);
+                }
+                else{
+                    startActivity(new Intent(Start.this, Register.class));
+                }
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            return registerUser;
+        }
+    }
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.nav_sessions) {
+            Intent intent = new Intent();
+            startActivity(intent);
+
+        } else if (id == R.id.nav_account) {
+            Intent intent = new Intent(Start.this, Account.class);
+            startActivity(intent);
+        }
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return false;
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
+
+    }
+
     public class AuthKeyCheck extends AsyncTask<String, Integer, models.BasicResponse> {
         @Override
         protected models.BasicResponse doInBackground(String... urls)  {
@@ -353,21 +435,17 @@ public class Start extends AppCompatActivity {
                     if(nfcAdapter!=null) {
                         boolean check = nfcAdapter.isEnabled();
                         if (nfcAdapter == null || !check) {
-
                             showWirelessSettings();
-
                         } else {
                             createPendingIntent();
                         }
                     }else{
-                        TextView  text = (TextView) findViewById(R.id.editText2);
-                        text.setVisibility(View.VISIBLE);
-                        Button btn = findViewById(R.id.button2);
-                        btn.setVisibility(View.VISIBLE);
                         TextView  text1 = (TextView) findViewById(R.id.textView3);
                         text1.setVisibility(View.INVISIBLE);
                         ProgressBar pb = findViewById(R.id.progressBar3);
                         pb.setVisibility(View.INVISIBLE);
+                        TextView qrTextView = findViewById(R.id.openQR);
+                        qrTextView.setVisibility(View.VISIBLE);
                     }
                 }
                 authKeyCheckRepeat = false;

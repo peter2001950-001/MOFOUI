@@ -30,8 +30,14 @@
         <activity android:name=".Register"
             android:screenOrientation="portrait"
             android:noHistory="true"></activity>
+        <activity android:name=".SendText"
+            android:label="Изпращане на съобщение"
+            android:screenOrientation="portrait">
+        </activity>
         <activity android:name=".Start"
+            android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait"
+            android:label="@string/app_name"
             android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -55,22 +61,28 @@
             </intent-filter>
         </activity>
         <activity android:name=".Upload"
+            android:label="Качване на файл"
             android:screenOrientation="portrait"
             />
         <activity android:name=".Account"
+            android:noHistory="true"
+            android:label="Акаунт"
             android:screenOrientation="portrait"/>
         <activity android:name=".Users"
+            android:label="Активни потребители"
             android:screenOrientation="portrait"/>
         <activity android:name=".Feed"
             android:screenOrientation="portrait"/>
+        <activity android:name=".LastSessions"
+            android:label="Минали сесии"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
+            android:label="Активна сесия"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait"></activity>
         <activity
             android:name=".QRScanner"
-            android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar"
             android:screenOrientation="portrait"></activity>
     </application>

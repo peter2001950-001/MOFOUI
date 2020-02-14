@@ -83,6 +83,7 @@ public class Register extends AppCompatActivity {
                 if(registerUser.status.equals("OK")) {
                     SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("Start", Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putString("cookies", urls[0]);
                     editor.putString("authKey", registerUser.auth);
                     editor.commit();
                     startActivity(new Intent(Register.this, Start.class));

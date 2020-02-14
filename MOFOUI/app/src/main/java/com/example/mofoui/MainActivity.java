@@ -9,6 +9,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,6 +33,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.gson.Gson;
@@ -60,34 +62,53 @@ public class MainActivity extends AppCompatActivity
     private RecyclerView frontFeedListView;
     private String url = Constants.URl;
     private models.File[] modelFiles;
-    private static Timer timer;
     private ArrayList<File> files;
+
+    private static Timer timer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(MainActivity.this, Upload.class));
-            }
-        });
+        if (timer==null){
+            timer =new Timer();
+        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
-
+        com.getbase.floatingactionbutton.FloatingActionButton messageBtn = findViewById(R.id.messageBtn);
+        com.getbase.floatingactionbutton.FloatingActionButton uploadBtn = findViewById(R.id.uploadBtn);
+        messageBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, SendText.class));
+            }
+        });
+        uploadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, Upload.class));
+            }
+        });
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
 
     }
+
+    @Override
+    protected void onDestroy() {
+        if(timer!=null) {
+            timer.cancel();
+            timer=null;
+        }
+        super.onDestroy();
+    }
+
     public void CreateFeedAdapter(){
             RecyclerView.LayoutManager manager = new LinearLayoutManager(getApplicationContext());
 
@@ -100,9 +121,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public  void onStart(){
         super.onStart();
-        timer = new Timer();
         TimerTask task = new FeedTimerTask(GetAuthKey());
-        timer.schedule(task, 0, 10000);
+        if(timer!=null) {
+            timer.schedule(task, 0, 10000);
+        }
         frontFeedListView = findViewById(R.id.feedListView);
         /*frontFeedListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -126,9 +148,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
+        return false;
     }
 
     @Override
@@ -216,13 +236,17 @@ public class MainActivity extends AppCompatActivity
 
                 } else if (basicResponse.status.compareTo("WRONG AUTH") == 0) {
                     startActivity(new Intent(MainActivity.this, Register.class));
-                    timer.cancel();
-                    timer = null;
+                    if(timer !=null) {
+                        timer.cancel();
+                        timer = null;
+                    }
                     finish();
                 } else if (basicResponse.status.compareTo("NO SESSION") == 0) {
                     startActivity(new Intent(MainActivity.this, Start.class));
-                    timer.cancel();
-                    timer = null;
+                    if(timer!=null) {
+                        timer.cancel();
+                        timer = null;
+                    }
                     finish();
                 }
             }else {
@@ -354,8 +378,10 @@ public class MainActivity extends AppCompatActivity
                 registerUser =gson.fromJson(requestResponse.JsonString, models.RegisterUser.class);
 
                 startActivity(new Intent(MainActivity.this, Start.class));
-                timer.cancel();
-                timer = null;
+                if(timer!=null) {
+                    timer.cancel();
+                    timer = null;
+                }
                 finish();
 
 
